@@ -1,20 +1,53 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  /* System UI stack on purpose: offline-first PWA for low-end Android, and
+     system faces render the Hindi/Devanagari content with no network round-trip. */
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
 
-  --color-brand-50: #eaf1ff;
-  --color-brand-100: #d3e3ff;
-  --color-brand-200: #a8c6ff;
-  --color-brand-300: #74a3ff;
-  --color-brand-400: #4381f5;
-  --color-brand-500: #1565d8;
-  --color-brand-600: #0e4fb8;
-  --color-brand-700: #0b3b8c;
-  --color-brand-800: #0a2f70;
-  --color-brand-900: #082657;
+  /* Brand blue */
+  --color-brand-50: #eef4ff;
+  --color-brand-100: #dbe7fe;
+  --color-brand-200: #bfd4fe;
+  --color-brand-300: #93b4fd;
+  --color-brand-400: #6090fa;
+  --color-brand-500: #2563eb;
+  --color-brand-600: #1d4ed8;
+  --color-brand-700: #1e40af;
+  --color-brand-800: #1b3a94;
+  --color-brand-900: #13315c;
 
-  --color-cyan-accent: #5ce0e6;
+  /* Sales & Billing agent / success green */
+  --color-leaf-50: #ecfdf3;
+  --color-leaf-100: #d3f8e0;
+  --color-leaf-500: #16a34a;
+  --color-leaf-600: #15803d;
+  --color-leaf-700: #166534;
+
+  /* Neutrals biased slightly blue so they read as chosen, not defaulted */
+  --color-canvas: #f4f7fb;
+  --color-surface: #ffffff;
+  --color-ink: #0f2140;
+  --color-ink-soft: #5b6b85;
+  --color-ink-faint: #8e9cb3;
+  --color-hairline: #e3e9f2;
+
+  /* Semantic, kept separate from the brand hue */
+  --color-warn: #b45309;
+  --color-warn-bg: #fef3c7;
+  --color-bad: #dc2626;
+  --color-bad-bg: #fee2e2;
+
+  /* Type scale */
+  --text-2xs: 0.6875rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-lg: 1.0625rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.375rem;
 }
 
 @layer base {
@@ -25,14 +58,35 @@
   }
 
   body {
-    background: #f4f7fb;
-    color: #0f172a;
+    background: var(--color-canvas);
+    color: var(--color-ink);
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior-y: none;
   }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }
 
-/* Safe-area padding so the app shell respects notches / home-indicator in standalone PWA mode */
+/* Safe-area padding so the shell respects notches / home indicator in standalone PWA mode */
 .safe-top {
   padding-top: max(env(safe-area-inset-top), 0px);
 }
@@ -40,15 +94,59 @@
   padding-bottom: max(env(safe-area-inset-bottom), 0px);
 }
 
-/* Simple mic pulse animation used while listening for voice input */
+/* Money, quantities and counts line up in columns */
+.nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.label-caps {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Mic listening pulse */
 @keyframes mic-pulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(21, 101, 216, 0.45);
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4);
   }
   100% {
-    box-shadow: 0 0 0 22px rgba(21, 101, 216, 0);
+    box-shadow: 0 0 0 28px rgba(37, 99, 235, 0);
   }
 }
 .animate-mic-pulse {
-  animation: mic-pulse 1.4s ease-out infinite;
+  animation: mic-pulse 1.6s ease-out infinite;
+}
+
+/* Voice waveform bars */
+@keyframes wave {
+  0%,
+  100% {
+    transform: scaleY(0.25);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+.animate-wave {
+  animation: wave 1s ease-in-out infinite;
+  transform-origin: center;
+}
+
+/* Success burst on the transaction screen */
+@keyframes pop-in {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.animate-pop-in {
+  animation: pop-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }

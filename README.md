@@ -1,109 +1,78 @@
-# Kirana AI — Paytm Store Assistant (PWA prototype)
+# PayBasket — Your AI Store Partner
 
-Voice-first AI assistant for kirana (small shop) merchants. A working
-prototype of the flow: chat home → add a product by voice → build a bill by
-voice → generate a Paytm-style QR → soundbox-style "payment received" alert →
-automatic reconciliation against the pending bill → an "ask merchant"
-fallback when a payment can't be auto-matched → an AI insights dashboard
-(low stock, top sellers, reorder recommendation).
+Mobile- and tablet-first PWA for kirana merchants, built around two AI agents:
+a **Store Manager** (products, stock, insights) and **Sales & Billing**
+(listen to the customer, build the bill, take payment, update stock).
 
-Installs as a Progressive Web App — add it to your phone's home screen for a
-fullscreen, standalone experience, or just use it as a normal browser tab.
+Powered by Phinite × Paytm.
+
+## Status: UI layer, ready for API integration
+
+All 12 screens are built and responsive. Every value currently shown comes
+from a single mock module — **`src/lib/mockData.ts`** — so wiring the Phinite
+AI API means replacing those exports with real calls and leaving the screens
+untouched. Nothing is hardcoded inside a component.
+
+## Screens
+
+| # | Screen | Route |
+|---|--------|-------|
+| 1 | Splash | `/` |
+| 2 | Login | `/login` |
+| 3 | Home / Dashboard | `/home` |
+| 4 | Agent Selection | `/assistants` |
+| 5 | Store Manager Chat | `/chat/store-manager` |
+| 6 | Add Product (Voice) | `/add-product` |
+| 7 | Product Details | `/product/:productId` |
+| 8 | Inventory | `/inventory` |
+| 9 | Sales & Billing | `/chat/sales` |
+| 10 | Payment | `/payment` |
+| 11 | Transaction Success | `/payment/success` |
+| 12 | Business Insights | `/insights` |
+
+## Responsive behaviour
+
+One shell (`src/components/AppShell.tsx`) drives every screen:
+
+- **Phone (< 768px)** — full-bleed single column, bottom tab bar
+  (Home · Products · Sales · Insights · More), safe-area padding for notches.
+- **Tablet (≥ 768px)** — the bottom bar is replaced by a persistent left nav
+  rail; content gets a comfortable max-width instead of stretching.
+- **Tablet landscape / desktop (≥ 1024px)** — screens with a natural split go
+  two-column (Product Details, Sales & Billing, Inventory), stat grids go 4-up.
+
+Verified at 390×844, 768×1024 and 1024×768: no console errors and no
+horizontal overflow on any of the 12 routes.
 
 ## Running it
 
 ```bash
 npm install
 npm run dev       # http://localhost:5173
+npm run build     # production build to dist/
+npm run preview   # serve the production build
 ```
 
-```bash
-npm run build      # production build to dist/
-npm run preview    # serve the production build locally
-```
+## Integrating the Phinite AI API
 
-## What's real vs. simulated
+Start in `src/lib/mockData.ts`. Each export maps to one part of the UI:
 
-There is no live Paytm merchant account, UPI PSP, or physical Soundbox
-device wired up here — none of that is available outside a real Paytm
-integration. To keep the app genuinely working end-to-end rather than a
-static mockup:
+- `store`, `dashboardStats`, `dashboardCounts` → Dashboard
+- `products`, `inventoryFilters` → Inventory + Product Details
+- `storeManagerThread` → Store Manager chat
+- `salesSession`, `initialCart` → Sales & Billing
+- `payment` → Payment + Transaction Success
+- `insightsStats`, `topSelling`, `lowStockAlert` → Business Insights
 
-- The QR code encodes a realistic `upi://pay` deep link (scannable by any
-  UPI app), pointed at a placeholder merchant VPA.
-- The "Simulate Payment Received" control on the QR screen stands in for the
-  webhook a real Paytm integration would call when a customer actually pays.
-  That's the exact point where a real webhook handler would plug in.
-- Everything downstream of that — matching the payment to a pending bill,
-  updating inventory, the "ask merchant" fallback when nothing matches, and
-  the insights dashboard — runs on real local logic against data persisted
-  in `localStorage` (no backend).
+Product images are currently emoji placeholders rendered by the `Thumb`
+component (`src/components/ui.tsx`) — swap that for an `<img>` once the API
+supplies image URLs.
 
 ## Deploying
 
-The app builds with a relative base path and hash-based routing
-(`/#/insights` rather than `/insights`), so the same `dist/` build works
-unmodified whether it's served from a domain root or a subpath like
-`/Payment-hackthon/` — no separate "GitHub Pages build" needed. Hash routing
-also means a deep-linked screen survives a hard refresh with zero server
-config, which matters on GitHub Pages since it has no server-side rewrite
-rules.
+Built with a relative base path and hash routing, so the same `dist/` works
+from a domain root or a subpath. `.github/workflows/deploy-pages.yml` publishes
+to GitHub Pages on every push to the default branch; `firebase.json` is set up
+as an alternative (`npm run deploy`).
 
-### Option A: GitHub Pages (free, no secrets needed)
-
-`.github/workflows/deploy-pages.yml` is already set up: on every push to
-`main` (or manually via the Actions tab), it builds the app and publishes
-`dist/` to GitHub Pages automatically using the repo's built-in permissions
-— no tokens or secrets to create.
-
-One-time setup in the GitHub UI: **Settings → Pages → Build and
-deployment → Source: "GitHub Actions"**. After that, every push to `main`
-deploys, and the app is live at `https://<username>.github.io/<repo>/`.
-
-If your default branch isn't `main`, update the `branches:` line in the
-workflow file to match.
-
-### Option B: Firebase Hosting
-
-The repo also has `firebase.json` configured: cache headers that keep the
-service worker/manifest fresh while long-caching the hashed JS/CSS bundles,
-plus an SPA rewrite rule (belt-and-suspenders — hash routing means it's
-rarely needed, but it's free to keep).
-
-One-time setup:
-
-```bash
-npm install -g firebase-tools   # or just use `npx firebase-tools ...` below
-firebase login                  # opens a browser to sign in to your Google account
-firebase projects:create        # or reuse an existing project
-firebase use --add              # link this folder to that project, creates .firebaserc
-```
-
-Then, any time you want to (re)deploy:
-
-```bash
-npm run deploy
-```
-
-That runs `npm run build` followed by `firebase deploy --only hosting`
-(via `npx firebase-tools`, so you don't need it installed globally). Your
-app will be live at `https://<project-id>.web.app`.
-
-`firebase use --add` creates a `.firebaserc` file recording which Firebase
-project this folder deploys to (just a project id, safe to commit). It
-isn't in the repo yet since no project has been linked — commit it once you
-run that command.
-
-## Voice input
-
-Product/bill entry uses the Web Speech API (`SpeechRecognition`) with
-support for Hindi/English code-switched phrases like *"Das Maggi, bees
-rupay"* (10 Maggi, ₹20) or *"2 Maggi, 1 Parle-G"*, plus a smaller Tamil
-number vocabulary. Every voice screen has a type-to-enter fallback, since
-Web Speech API support varies by browser (notably: no support in Firefox,
-partial support in some mobile WebViews).
-
-## Tech
-
-React + TypeScript + Vite, Tailwind CSS, React Router, `vite-plugin-pwa`
-(installable manifest + service worker), `qrcode.react`.
+Live: https://gokulnath30.github.io/paytm-hackthon/

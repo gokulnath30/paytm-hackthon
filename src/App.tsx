@@ -1,37 +1,36 @@
-import { useEffect } from 'react'
 import { HashRouter, Route, Routes } from 'react-router-dom'
-import { LangProvider } from './lib/langContext'
-import { ensureSeeded } from './lib/store'
-import Home from './screens/Home'
-import AddProduct from './screens/AddProduct'
-import NewBill from './screens/NewBill'
-import PaymentQR from './screens/PaymentQR'
-import PaymentReceived from './screens/PaymentReceived'
-import Reconciliation from './screens/Reconciliation'
-import AskMerchant from './screens/AskMerchant'
-import Insights from './screens/Insights'
+import Splash from './screens/Splash'
+import Login from './screens/Login'
+import Dashboard from './screens/Dashboard'
+import AgentSelect from './screens/AgentSelect'
+import StoreManagerChat from './screens/StoreManagerChat'
+import AddProductVoice from './screens/AddProductVoice'
+import ProductDetails from './screens/ProductDetails'
+import Inventory from './screens/Inventory'
+import SalesBilling from './screens/SalesBilling'
+import Payment from './screens/Payment'
+import TransactionSuccess from './screens/TransactionSuccess'
+import BusinessInsights from './screens/BusinessInsights'
 
 // HashRouter (not BrowserRouter) so deep links survive a page refresh on static
 // hosts with no server-side rewrite rule, e.g. GitHub Pages project sites.
 export default function App() {
-  useEffect(() => {
-    ensureSeeded()
-  }, [])
-
   return (
-    <LangProvider>
-      <HashRouter>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/add-product" element={<AddProduct />} />
-          <Route path="/bill/new" element={<NewBill />} />
-          <Route path="/bill/:billId/qr" element={<PaymentQR />} />
-          <Route path="/payment/:paymentId/received" element={<PaymentReceived />} />
-          <Route path="/payment/:paymentId/reconcile" element={<Reconciliation />} />
-          <Route path="/payment/:paymentId/ask" element={<AskMerchant />} />
-          <Route path="/insights" element={<Insights />} />
-        </Routes>
-      </HashRouter>
-    </LangProvider>
+    <HashRouter>
+      <Routes>
+        <Route path="/" element={<Splash />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/home" element={<Dashboard />} />
+        <Route path="/assistants" element={<AgentSelect />} />
+        <Route path="/chat/store-manager" element={<StoreManagerChat />} />
+        <Route path="/chat/sales" element={<SalesBilling />} />
+        <Route path="/add-product" element={<AddProductVoice />} />
+        <Route path="/inventory" element={<Inventory />} />
+        <Route path="/product/:productId" element={<ProductDetails />} />
+        <Route path="/payment" element={<Payment />} />
+        <Route path="/payment/success" element={<TransactionSuccess />} />
+        <Route path="/insights" element={<BusinessInsights />} />
+      </Routes>
+    </HashRouter>
   )
 }
