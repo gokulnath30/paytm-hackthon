@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { HashRouter, Route, Routes } from 'react-router-dom'
 import { LangProvider } from './lib/langContext'
 import { ensureSeeded } from './lib/store'
 import Home from './screens/Home'
@@ -11,6 +11,8 @@ import Reconciliation from './screens/Reconciliation'
 import AskMerchant from './screens/AskMerchant'
 import Insights from './screens/Insights'
 
+// HashRouter (not BrowserRouter) so deep links survive a page refresh on static
+// hosts with no server-side rewrite rule, e.g. GitHub Pages project sites.
 export default function App() {
   useEffect(() => {
     ensureSeeded()
@@ -18,7 +20,7 @@ export default function App() {
 
   return (
     <LangProvider>
-      <BrowserRouter>
+      <HashRouter>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/add-product" element={<AddProduct />} />
@@ -29,7 +31,7 @@ export default function App() {
           <Route path="/payment/:paymentId/ask" element={<AskMerchant />} />
           <Route path="/insights" element={<Insights />} />
         </Routes>
-      </BrowserRouter>
+      </HashRouter>
     </LangProvider>
   )
 }

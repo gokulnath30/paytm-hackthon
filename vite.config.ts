@@ -2,20 +2,22 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// https://vite.dev/config/
+// Relative base so the build works unmodified from a domain root (Firebase
+// Hosting) or a subpath (GitHub Pages project sites, e.g. /Payment-hackthon/).
 export default defineConfig({
+  base: './',
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icons/apple-touch-icon.png'],
       manifest: {
-        id: '/',
+        id: '.',
         name: 'Paytm Kirana AI',
         short_name: 'Kirana AI',
         description: 'Voice-first AI store assistant for kirana merchants — every payment becomes an insight.',
-        start_url: '/',
-        scope: '/',
+        start_url: '.',
+        scope: '.',
         display: 'standalone',
         display_override: ['window-controls-overlay', 'standalone'],
         orientation: 'portrait',
