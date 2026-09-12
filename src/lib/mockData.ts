@@ -181,6 +181,61 @@ export const products: Product[] = [
   },
 ]
 
+/* ---------- Billing catalog ----------
+ * Kept separate from `products` above (which backs Inventory / Product Details)
+ * so the counter catalog can carry its own pricing, MRP and shelf counts. */
+
+export interface Category {
+  id: string
+  label: string
+  thumb: string
+}
+
+export interface CatalogItem {
+  id: string
+  name: string
+  packSize: string
+  thumb: string
+  categoryId: string
+  price: number
+  mrp?: number
+  stockLeft: number
+}
+
+export const categories: Category[] = [
+  { id: 'all', label: 'All', thumb: '🧺' },
+  { id: 'dairy', label: 'Dairy', thumb: '🥛' },
+  { id: 'bakery', label: 'Bakery', thumb: '🍞' },
+  { id: 'snacks', label: 'Snacks', thumb: '🍟' },
+  { id: 'biscuits', label: 'Biscuits', thumb: '🍪' },
+  { id: 'noodles', label: 'Noodles', thumb: '🍜' },
+  { id: 'beverages', label: 'Beverages', thumb: '🥤' },
+  { id: 'staples', label: 'Staples', thumb: '🌾' },
+]
+
+export const catalog: CatalogItem[] = [
+  { id: 'maggi', name: 'Maggi 2-Minute Noodles', packSize: '70g', thumb: '🍜', categoryId: 'noodles', price: 20, mrp: 24, stockLeft: 20 },
+  { id: 'amul-milk', name: 'Amul Taaza Milk', packSize: '500ml', thumb: '🥛', categoryId: 'dairy', price: 30, mrp: 32, stockLeft: 18 },
+  { id: 'parle-g', name: 'Parle-G Biscuits', packSize: '100g', thumb: '🍪', categoryId: 'biscuits', price: 10, mrp: 12, stockLeft: 50 },
+  { id: 'britannia-bread', name: 'Britannia Bread', packSize: '400g', thumb: '🍞', categoryId: 'bakery', price: 40, mrp: 45, stockLeft: 3 },
+  { id: 'amul-butter', name: 'Amul Butter', packSize: '100g', thumb: '🧈', categoryId: 'dairy', price: 58, mrp: 62, stockLeft: 5 },
+  { id: 'coke', name: 'Coke 500ml', packSize: '500ml', thumb: '🥤', categoryId: 'beverages', price: 40, mrp: 45, stockLeft: 4 },
+  { id: 'amul-curd', name: 'Amul Masti Curd', packSize: '400g', thumb: '🍶', categoryId: 'dairy', price: 35, mrp: 40, stockLeft: 12 },
+  { id: 'paneer', name: 'Amul Malai Paneer', packSize: '200g', thumb: '🧀', categoryId: 'dairy', price: 95, mrp: 105, stockLeft: 6 },
+  { id: 'rusk', name: 'Britannia Rusk', packSize: '300g', thumb: '🥖', categoryId: 'bakery', price: 45, mrp: 50, stockLeft: 9 },
+  { id: 'lays', name: 'Lays Classic Salted', packSize: '52g', thumb: '🍟', categoryId: 'snacks', price: 20, mrp: 20, stockLeft: 24 },
+  { id: 'kurkure', name: 'Kurkure Masala Munch', packSize: '90g', thumb: '🌶️', categoryId: 'snacks', price: 20, mrp: 20, stockLeft: 16 },
+  { id: 'haldiram', name: 'Haldiram Bhujia', packSize: '200g', thumb: '🥨', categoryId: 'snacks', price: 52, mrp: 58, stockLeft: 11 },
+  { id: 'good-day', name: 'Good Day Cashew', packSize: '150g', thumb: '🍘', categoryId: 'biscuits', price: 30, mrp: 35, stockLeft: 22 },
+  { id: 'oreo', name: 'Oreo Original', packSize: '120g', thumb: '🍫', categoryId: 'biscuits', price: 35, mrp: 40, stockLeft: 14 },
+  { id: 'yippee', name: 'Sunfeast Yippee Noodles', packSize: '70g', thumb: '🍲', categoryId: 'noodles', price: 15, mrp: 18, stockLeft: 28 },
+  { id: 'thumsup', name: 'Thums Up', packSize: '750ml', thumb: '🥤', categoryId: 'beverages', price: 45, mrp: 50, stockLeft: 8 },
+  { id: 'frooti', name: 'Frooti Mango Drink', packSize: '250ml', thumb: '🧃', categoryId: 'beverages', price: 20, mrp: 22, stockLeft: 30 },
+  { id: 'tata-salt', name: 'Tata Salt', packSize: '1kg', thumb: '🧂', categoryId: 'staples', price: 28, mrp: 30, stockLeft: 19 },
+  { id: 'aashirvaad', name: 'Aashirvaad Atta', packSize: '5kg', thumb: '🌾', categoryId: 'staples', price: 285, mrp: 310, stockLeft: 7 },
+  { id: 'fortune-oil', name: 'Fortune Sunflower Oil', packSize: '1L', thumb: '🫒', categoryId: 'staples', price: 145, mrp: 160, stockLeft: 10 },
+]
+
 export const inventoryFilters = [
   { id: 'all', label: 'All', count: 32 },
   { id: 'in-stock', label: 'In Stock', count: 26 },

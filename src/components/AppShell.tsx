@@ -11,11 +11,13 @@ const NAV_ITEMS = [
   { to: '/assistants', label: 'More', Icon: MoreIcon },
 ]
 
-type Width = 'narrow' | 'wide'
+type Width = 'narrow' | 'wide' | 'full'
 
 const WIDTH_CLASS: Record<Width, string> = {
   narrow: 'max-w-2xl',
   wide: 'max-w-5xl',
+  // Counter-facing screens use the whole display rather than a centred column
+  full: 'max-w-none',
 }
 
 interface AppShellProps {
@@ -82,9 +84,15 @@ export function AppShell({
           </div>
         </header>
 
-        {/* min-h-0 lets this flex child actually scroll instead of growing the frame */}
-        <main className="min-h-0 flex-1 overflow-y-auto">
-          <div className={`mx-auto w-full ${widthClass} ${padded ? 'px-4 py-5 sm:px-6 sm:py-6' : ''}`}>{children}</div>
+        {/* min-h-0 lets this flex child actually scroll instead of growing the frame.
+            Unpadded screens manage their own panes, so they get a definite height
+            to size against (h-full) and main itself stops scrolling. */}
+        <main className={`min-h-0 flex-1 ${padded ? 'overflow-y-auto' : 'overflow-hidden'}`}>
+          <div
+            className={`mx-auto w-full ${widthClass} ${padded ? 'px-4 py-5 sm:px-6 sm:py-6' : 'h-full'}`}
+          >
+            {children}
+          </div>
         </main>
 
         {footer && (
