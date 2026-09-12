@@ -1,7 +1,10 @@
 /**
- * Every value shown in the UI lives here, typed and in one place, so wiring the
- * Phinite AI API later means replacing these exports with fetch calls and
- * leaving the screens untouched.
+ * Copy, fixtures and the shared view-model types.
+ *
+ * Live figures now come from `lib/api` — this file keeps the UI strings the
+ * screens render, the scripted conversations the assistant docks open with,
+ * and the fixtures the mock transport (`lib/api/mock.ts`) shapes into PayBasket
+ * records when no API is configured.
  */
 
 export type StockState = 'in-stock' | 'low' | 'out'
@@ -47,23 +50,14 @@ export interface ChatMessage {
   }
   /** Bulleted suggestions the agent offers. */
   bullets?: string[]
+  /** Set when the turn is a failure notice rather than an answer. */
+  failed?: boolean
 }
 
 export const store = {
-  name: 'Sharma Kirana Store',
   ownerGreeting: 'Good Morning, Sharma ji!',
   greetingSub: 'Your store is doing great today.',
 }
-
-export const dashboardStats = [
-  { id: 'sales', label: "Today's Sales", value: '₹5,420', delta: '12%', trend: 'up' as const },
-  { id: 'profit', label: 'Est. Profit', value: '₹1,820', delta: '8%', trend: 'up' as const },
-]
-
-export const dashboardCounts = [
-  { id: 'customers', label: 'Customers', value: '48' },
-  { id: 'low-stock', label: 'Low Stock Items', value: '12' },
-]
 
 export const agents = [
   {
@@ -200,6 +194,8 @@ export interface CatalogItem {
   price: number
   mrp?: number
   stockLeft: number
+  /** Reorder level, when the record carries one. Drives the "only N left" flag. */
+  minStock?: number
 }
 
 export const categories: Category[] = [
@@ -236,13 +232,6 @@ export const catalog: CatalogItem[] = [
   { id: 'fortune-oil', name: 'Fortune Sunflower Oil', packSize: '1L', thumb: '🫒', categoryId: 'staples', price: 145, mrp: 160, stockLeft: 10 },
 ]
 
-export const inventoryFilters = [
-  { id: 'all', label: 'All', count: 32 },
-  { id: 'in-stock', label: 'In Stock', count: 26 },
-  { id: 'low', label: 'Low Stock', count: 6 },
-  { id: 'out', label: 'Out of Stock', count: null },
-]
-
 export const storeManagerThread: ChatMessage[] = [
   {
     id: 'm1',
@@ -269,13 +258,6 @@ export const storeManagerThread: ChatMessage[] = [
     text: 'You can ask me:',
     bullets: ['Show current stock', 'Change price', 'What sold the most?'],
   },
-]
-
-/** Stand-in for product photography until the API supplies image URLs. */
-export const productThumbs = [
-  '🍜', '🥛', '🍪', '🍞', '🧈', '🥤', '🍶', '🧀', '🥖', '🍟',
-  '🌶️', '🥨', '🍘', '🍫', '🍲', '🧃', '🧂', '🌾', '🫒', '🥫',
-  '🍚', '🫘', '☕', '🧴',
 ]
 
 export const addProductVoice = {
@@ -316,11 +298,6 @@ export const salesConversation: ConversationTurn[] = [
   },
 ]
 
-export const initialCart: CartItem[] = [
-  { productId: 'amul-milk', name: 'Amul Taaza Milk', packSize: '500ml', thumb: '🥛', unitPrice: 30, qty: 2 },
-  { productId: 'britannia-bread', name: 'Britannia Bread', packSize: '400g', thumb: '🍞', unitPrice: 40, qty: 1 },
-]
-
 export const payment = {
   customer: 'Customer #104',
   orderId: 'Order #104',
@@ -331,10 +308,10 @@ export const payment = {
   inventoryNote: 'Inventory updated automatically',
 }
 
-export const insightsRanges = ['Today', 'This Week', 'This Month']
-
 export const insightsTabs = ['Overview', 'Products', 'Customers', 'Inventory']
 
+/* The headline figures the mock transport serves when no API is configured.
+ * Authored as display strings; `lib/api/mock.ts` parses the numbers back out. */
 export const insightsStats = [
   { id: 'total-sales', label: 'Total Sales', value: '₹5,420', delta: '12%' },
   { id: 'est-profit', label: 'Est. Profit', value: '₹1,820', delta: '8%' },
@@ -342,16 +319,12 @@ export const insightsStats = [
   { id: 'items-sold', label: 'Items Sold', value: '127', delta: '15%' },
 ]
 
+/** Best sellers for the same mock rollup. */
 export const topSelling = [
   { rank: 1, name: 'Maggi 2-Minute Noodles', thumb: '🍜', units: 42 },
   { rank: 2, name: 'Amul Taaza Milk', thumb: '🥛', units: 36 },
   { rank: 3, name: 'Parle-G Biscuits', thumb: '🍪', units: 28 },
 ]
-
-export const lowStockAlert = {
-  title: 'Low Stock Alert',
-  body: '3 products are running low.',
-}
 
 export const login = {
   title: 'Welcome back!',

@@ -1,12 +1,24 @@
-import { useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AppShell } from '../components/AppShell'
-import { Button, Thumb } from '../components/ui'
+import { Button, ErrorState, LoadingBlock, Thumb } from '../components/ui'
 import { CheckIcon, CheckCircleIcon, ReceiptIcon } from '../components/icons'
-import { initialCart, payment } from '../lib/mockData'
+import { payment } from '../lib/mockData'
+import { endSession, getOrder, orderToCart } from '../lib/api'
+import type { OrderRecord } from '../lib/api'
+import { inr } from '../lib/format'
+import { useResource } from '../lib/useResource'
 
 export default function TransactionSuccess() {
   const navigate = useNavigate()
-  const total = initialCart.reduce((sum, i) => sum + i.unitPrice * i.qty, 0)
+  const [params] = useSearchParams()
+  const orderId = params.get('order') ?? ''
+
+  const order = useResource(() => (orderId ? getOrder(orderId) : Promise.resolve(null)), [orderId])
+
+  // The visit is over: the next customer at the counter gets their own session,
+  // and their own basket.
+  useEffect(() => endSession(), [])
 
   return (
     <AppShell
@@ -29,25 +41,20 @@ export default function TransactionSuccess() {
         </div>
 
         <h1 className="mt-5 text-2xl font-bold text-ink">{payment.successTitle}</h1>
-        <p className="nums mt-1 text-lg font-semibold text-leaf-600">₹{total} received</p>
-        <p className="nums mt-0.5 text-base text-ink-soft">{payment.orderId}</p>
 
-        <div className="mt-5 w-full rounded-xl border border-hairline bg-surface px-4">
-          {initialCart.map((item) => (
-            <div key={item.productId} className="flex items-center gap-3 border-b border-hairline py-3">
-              <Thumb emoji={item.thumb} size="sm" />
-              <p className="min-w-0 flex-1 truncate text-left text-base text-ink">{item.name}</p>
-              <p className="nums shrink-0 text-sm text-ink-soft">× {item.qty}</p>
-              <p className="nums w-14 shrink-0 text-right text-base font-semibold text-ink">
-                ₹{item.unitPrice * item.qty}
-              </p>
-            </div>
-          ))}
-          <div className="flex items-center justify-between py-3">
-            <span className="text-base font-semibold text-ink">Total</span>
-            <span className="nums text-base font-bold text-ink">₹{total}</span>
+        {order.loading && !order.data && (
+          <div className="mt-5 w-full">
+            <LoadingBlock label="Loading receipt" rows={2} />
           </div>
-        </div>
+        )}
+
+        {order.error && (
+          <div className="mt-5 w-full">
+            <ErrorState message={order.error} onRetry={order.reload} />
+          </div>
+        )}
+
+        {order.data && <Receipt order={order.data} />}
 
         <p className="mt-4 flex w-full items-center gap-2 rounded-xl bg-leaf-50 px-4 py-3 text-left text-sm font-medium text-leaf-700">
           <CheckCircleIcon width={17} height={17} className="shrink-0" />
@@ -55,6 +62,34 @@ export default function TransactionSuccess() {
         </p>
       </div>
     </AppShell>
+  )
+}
+
+function Receipt({ order }: { order: OrderRecord }) {
+  const items = orderToCart(order)
+
+  return (
+    <>
+      <p className="nums mt-1 text-lg font-semibold text-leaf-600">{inr(order.total_amount)} received</p>
+      <p className="nums mt-0.5 text-base text-ink-soft">{order.order_id}</p>
+
+      <div className="mt-5 w-full rounded-xl border border-hairline bg-surface px-4">
+        {items.map((item) => (
+          <div key={item.productId} className="flex items-center gap-3 border-b border-hairline py-3">
+            <Thumb emoji={item.thumb} size="sm" />
+            <p className="min-w-0 flex-1 truncate text-left text-base text-ink">{item.name}</p>
+            <p className="nums shrink-0 text-sm text-ink-soft">× {item.qty}</p>
+            <p className="nums w-14 shrink-0 text-right text-base font-semibold text-ink">
+              {inr(item.unitPrice * item.qty)}
+            </p>
+          </div>
+        ))}
+        <div className="flex items-center justify-between py-3">
+          <span className="text-base font-semibold text-ink">Total</span>
+          <span className="nums text-base font-bold text-ink">{inr(order.total_amount)}</span>
+        </div>
+      </div>
+    </>
   )
 }
 

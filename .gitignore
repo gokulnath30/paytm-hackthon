@@ -13,6 +13,11 @@ dist-ssr
 dev-dist
 *.local
 
+# Env files: secrets live here, never in the repo (.env.example is the template)
+.env
+.env.*
+!.env.example
+
 # Firebase
 .firebase/
 firebase-debug.log

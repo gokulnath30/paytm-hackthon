@@ -1,14 +1,19 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppShell } from '../components/AppShell'
-import { Button, Thumb } from '../components/ui'
+import { Button, EmptyState, ErrorState, LoadingBlock, Thumb } from '../components/ui'
 import { DotsIcon, FilterIcon, PlusIcon, SearchIcon } from '../components/icons'
-import { inventoryFilters, products } from '../lib/mockData'
+import { filterCounts, getProducts } from '../lib/api'
+import { useResource } from '../lib/useResource'
 
 export default function Inventory() {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState('all')
+
+  const catalogue = useResource(getProducts, [])
+  const products = useMemo(() => catalogue.data ?? [], [catalogue.data])
+  const filters = useMemo(() => filterCounts(products), [products])
 
   const visible = products.filter((p) => {
     const matchesQuery = p.name.toLowerCase().includes(query.trim().toLowerCase())
@@ -54,7 +59,7 @@ export default function Inventory() {
 
       <div className="-mx-4 mb-3 overflow-x-auto px-4 sm:mx-0 sm:px-0">
         <div className="flex w-max gap-2">
-          {inventoryFilters.map((f) => {
+          {filters.map((f) => {
             const active = filter === f.id
             return (
               <button
@@ -68,12 +73,16 @@ export default function Inventory() {
                 }`}
               >
                 {f.label}
-                {f.count !== null && <span className="nums"> ({f.count})</span>}
+                <span className="nums"> ({f.count})</span>
               </button>
             )
           })}
         </div>
       </div>
+
+      {catalogue.error && <ErrorState message={catalogue.error} onRetry={catalogue.reload} />}
+
+      {catalogue.loading && !catalogue.data && <LoadingBlock label="Loading products" rows={4} />}
 
       <div className="grid gap-2.5 md:grid-cols-2">
         {visible.map((p) => (
@@ -112,10 +121,10 @@ export default function Inventory() {
           </div>
         ))}
 
-        {visible.length === 0 && (
-          <p className="rounded-xl border border-dashed border-hairline py-10 text-center text-base text-ink-faint">
-            No products match that search.
-          </p>
+        {!catalogue.loading && !catalogue.error && visible.length === 0 && (
+          <EmptyState>
+            {products.length === 0 ? 'No products yet. Add your first one below.' : 'No products match that search.'}
+          </EmptyState>
         )}
       </div>
     </AppShell>

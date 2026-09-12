@@ -2,13 +2,17 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppShell } from '../components/AppShell'
 import { AiChatDock } from '../components/AiChatDock'
-import { Button } from '../components/ui'
+import { Button, ErrorState, Thumb } from '../components/ui'
 import { CheckCircleIcon } from '../components/icons'
-import { addProductVoice, categories, productThumbs, storeManagerThread } from '../lib/mockData'
+import { addProductVoice, categories, storeManagerThread } from '../lib/mockData'
+import { addProduct, sendChat } from '../lib/api'
+import { thumbFor } from '../lib/api/map'
+import { inr } from '../lib/format'
 
 interface Draft {
   name: string
-  thumb: string
+  /** Maps to the record's `image` field. Optional: most rows have none. */
+  imageUrl: string
   categoryId: string
   brand: string
   packSize: string
@@ -21,7 +25,7 @@ interface Draft {
 
 const EMPTY: Draft = {
   name: '',
-  thumb: '🍜',
+  imageUrl: '',
   categoryId: 'snacks',
   brand: '',
   packSize: '',
@@ -35,7 +39,7 @@ const EMPTY: Draft = {
 /** What the Store Manager AI extracted from the spoken request. */
 const AI_EXTRACTED: Draft = {
   name: 'Maggi 2-Minute Noodles',
-  thumb: '🍜',
+  imageUrl: '',
   categoryId: 'noodles',
   brand: 'Nestlé',
   packSize: '70g',
@@ -46,10 +50,14 @@ const AI_EXTRACTED: Draft = {
   supplier: 'Local Distributor',
 }
 
+const labelFor = (categoryId: string) => categories.find((c) => c.id === categoryId)?.label ?? 'General'
+
 export default function AddProduct() {
   const navigate = useNavigate()
   const [draft, setDraft] = useState<Draft>(EMPTY)
   const [saved, setSaved] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) => setDraft((d) => ({ ...d, [key]: value }))
 
@@ -60,9 +68,28 @@ export default function AddProduct() {
       ? Number(draft.sellingPrice) - Number(draft.purchasePrice)
       : null
 
-  function save() {
-    if (!canSave) return
-    setSaved(true)
+  async function save() {
+    if (!canSave || saving) return
+    setSaving(true)
+    setError(null)
+    try {
+      await addProduct({
+        name: draft.name,
+        brand: draft.brand,
+        category: labelFor(draft.categoryId),
+        packSize: draft.packSize,
+        purchasePrice: Number(draft.purchasePrice) || 0,
+        sellingPrice: Number(draft.sellingPrice),
+        stock: Number(draft.stock),
+        minStock: draft.minStock ? Number(draft.minStock) : undefined,
+        supplier: draft.supplier,
+      })
+      setSaved(true)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not save that product.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   if (saved) {
@@ -74,7 +101,7 @@ export default function AddProduct() {
           </span>
           <h2 className="mt-4 text-xl font-bold text-ink">Product added</h2>
           <p className="nums mt-1 text-base text-ink-soft">
-            {draft.name} · {draft.stock} units · ₹{draft.sellingPrice}
+            {draft.name} · {draft.stock} units · {inr(Number(draft.sellingPrice) || 0)}
           </p>
 
           <div className="mt-6 grid w-full grid-cols-2 gap-3">
@@ -106,12 +133,18 @@ export default function AddProduct() {
             <Button variant="secondary" onClick={() => navigate(-1)}>
               Cancel
             </Button>
-            <Button onClick={save} disabled={!canSave}>
-              Save Product
+            <Button onClick={() => void save()} disabled={!canSave || saving}>
+              {saving ? 'Saving…' : 'Save Product'}
             </Button>
           </div>
         }
       >
+        {error && (
+          <div className="mb-4">
+            <ErrorState message={error} onRetry={() => void save()} />
+          </div>
+        )}
+
         <div className="grid gap-5 md:grid-cols-2 md:items-start">
           <section className="space-y-4">
             <Field label="Product name" required>
@@ -124,25 +157,20 @@ export default function AddProduct() {
               />
             </Field>
 
-            <div>
-              <p className="mb-2 text-sm font-medium text-ink">Product image</p>
-              <div className="flex flex-wrap gap-2">
-                {productThumbs.map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => set('thumb', t)}
-                    aria-label={`Use ${t} as the product image`}
-                    aria-pressed={draft.thumb === t}
-                    className={`flex h-11 w-11 items-center justify-center rounded-lg border text-xl transition-colors ${
-                      draft.thumb === t ? 'border-brand-500 bg-brand-50' : 'border-hairline bg-surface hover:bg-canvas'
-                    }`}
-                  >
-                    <span aria-hidden="true">{t}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
+            <Field label="Image URL">
+              <input
+                id="ap-image"
+                type="url"
+                inputMode="url"
+                value={draft.imageUrl}
+                onChange={(e) => set('imageUrl', e.target.value)}
+                placeholder="https://… (optional)"
+                className={inputClass}
+              />
+              <span className="mt-1.5 block text-xs text-ink-faint">
+                Leave it empty and the tile falls back to an icon picked from the name.
+              </span>
+            </Field>
 
             <div>
               <p className="mb-2 text-sm font-medium text-ink">Category</p>
@@ -252,19 +280,17 @@ export default function AddProduct() {
             <div className="rounded-xl border border-hairline bg-surface p-4">
               <p className="label-caps mb-2.5 text-xs font-semibold text-ink-faint">Preview</p>
               <div className="flex items-center gap-3">
-                <span
-                  className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-hairline bg-canvas text-2xl"
-                  aria-hidden="true"
-                >
-                  {draft.thumb}
-                </span>
+                <Thumb
+                  emoji={thumbFor(draft.name || 'product', labelFor(draft.categoryId))}
+                  src={draft.imageUrl.trim() || null}
+                />
                 <div className="min-w-0">
                   <p className="text-base font-semibold text-ink">{draft.name || 'Product name'}</p>
                   <p className="text-sm text-ink-soft">
                     {[draft.brand, draft.packSize].filter(Boolean).join(' | ') || 'Brand | Pack size'}
                   </p>
                   <p className="nums text-sm font-medium text-ink">
-                    {draft.sellingPrice ? `₹${draft.sellingPrice}` : '₹—'}
+                    {draft.sellingPrice ? inr(Number(draft.sellingPrice) || 0) : '₹—'}
                     {draft.stock && <span className="text-ink-faint"> · {draft.stock} units</span>}
                   </p>
                 </div>
@@ -285,6 +311,7 @@ export default function AddProduct() {
           from: m.from === 'agent' ? 'agent' : 'user',
           text: m.text ?? '',
         }))}
+        onSend={(message) => sendChat({ message, role: 'owner' })}
         action={{ label: 'Fill the form with these details', onClick: () => setDraft(AI_EXTRACTED) }}
         aboveFooter
       />

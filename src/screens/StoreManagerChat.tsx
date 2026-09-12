@@ -1,12 +1,47 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AppShell } from '../components/AppShell'
 import { AgentAvatar, Thumb } from '../components/ui'
 import { CheckCircleIcon, DotsIcon, MicIcon, SendIcon } from '../components/icons'
 import { storeManagerThread } from '../lib/mockData'
 import type { ChatMessage } from '../lib/mockData'
+import { sendChat } from '../lib/api'
 
 export default function StoreManagerChat() {
   const [draft, setDraft] = useState('')
+  const [thread, setThread] = useState<ChatMessage[]>(storeManagerThread)
+  const [pending, setPending] = useState(false)
+  const endRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' })
+  }, [thread, pending])
+
+  async function send() {
+    const message = draft.trim()
+    if (!message || pending) return
+
+    const stamp = Date.now()
+    setThread((prev) => [...prev, { id: `u${stamp}`, from: 'user', text: message }])
+    setDraft('')
+    setPending(true)
+
+    try {
+      const reply = await sendChat({ message, role: 'owner' })
+      setThread((prev) => [...prev, { id: `a${stamp}`, from: 'agent', text: reply.text, bullets: reply.bullets }])
+    } catch (error) {
+      setThread((prev) => [
+        ...prev,
+        {
+          id: `e${stamp}`,
+          from: 'agent',
+          failed: true,
+          text: error instanceof Error ? error.message : 'The assistant could not be reached.',
+        },
+      ])
+    } finally {
+      setPending(false)
+    }
+  }
 
   return (
     <AppShell
@@ -45,14 +80,19 @@ export default function StoreManagerChat() {
             id="store-manager-input"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') void send()
+            }}
             placeholder="Type or speak your message..."
             aria-label="Type or speak your message"
             className="h-12 min-w-0 flex-1 rounded-xl border border-hairline bg-canvas px-4 text-base text-ink outline-none placeholder:text-ink-faint focus:border-brand-400"
           />
           <button
             type="button"
+            onClick={() => void send()}
+            disabled={!draft.trim() || pending}
             aria-label="Send message"
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-500 text-white transition-colors hover:bg-brand-600"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-500 text-white transition-colors hover:bg-brand-600 disabled:opacity-40"
           >
             <SendIcon width={19} height={19} />
           </button>
@@ -60,9 +100,27 @@ export default function StoreManagerChat() {
       }
     >
       <div className="space-y-3.5">
-        {storeManagerThread.map((msg) => (
+        {thread.map((msg) => (
           <Message key={msg.id} msg={msg} />
         ))}
+
+        {pending && (
+          <div className="flex items-start gap-2.5" role="status" aria-live="polite">
+            <AgentAvatar tone="brand" size="sm" />
+            <span className="flex items-center gap-1 rounded-2xl rounded-bl-md border border-hairline bg-surface px-4 py-4">
+              <span className="sr-only">Store Manager AI is replying</span>
+              {[0, 1, 2].map((i) => (
+                <span
+                  key={i}
+                  className="animate-wave h-1.5 w-1.5 rounded-full bg-ink-faint"
+                  style={{ animationDelay: `${i * 0.15}s` }}
+                />
+              ))}
+            </span>
+          </div>
+        )}
+
+        <div ref={endRef} />
       </div>
     </AppShell>
   )
@@ -86,8 +144,12 @@ function Message({ msg }: { msg: ChatMessage }) {
       <AgentAvatar tone="brand" size="sm" />
       <div className="min-w-0 max-w-[85%] space-y-2.5 sm:max-w-[75%]">
         {msg.text && (
-          <div className="rounded-2xl rounded-bl-md border border-hairline bg-surface px-4 py-3">
-            <p className="whitespace-pre-line text-base text-ink">{msg.text}</p>
+          <div
+            className={`rounded-2xl rounded-bl-md border px-4 py-3 ${
+              msg.failed ? 'border-bad/20 bg-bad-bg' : 'border-hairline bg-surface'
+            }`}
+          >
+            <p className={`whitespace-pre-line text-base ${msg.failed ? 'text-bad' : 'text-ink'}`}>{msg.text}</p>
 
             {msg.bullets && (
               <ul className="mt-2 space-y-1">

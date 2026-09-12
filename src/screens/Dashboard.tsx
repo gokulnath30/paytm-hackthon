@@ -1,12 +1,17 @@
 import { useNavigate } from 'react-router-dom'
 import { AppShell } from '../components/AppShell'
 import { Wordmark } from '../components/Brand'
-import { AgentAvatar, StatTile } from '../components/ui'
+import { AgentAvatar, ErrorState, Skeleton, StatTile } from '../components/ui'
 import { AlertIcon, BellIcon, ChevronDownIcon, StoreIcon, SunIcon, UsersIcon } from '../components/icons'
-import { agents, dashboardCounts, dashboardStats, store } from '../lib/mockData'
+import { agents, store } from '../lib/mockData'
+import { getSummary, storeName } from '../lib/api'
+import { count, direction, inr, percent } from '../lib/format'
+import { useResource } from '../lib/useResource'
 
 export default function Dashboard() {
   const navigate = useNavigate()
+  const summary = useResource(() => getSummary('today'), [])
+  const today = summary.data
 
   return (
     <AppShell
@@ -37,7 +42,7 @@ export default function Dashboard() {
         className="mb-4 flex items-center gap-2 rounded-xl border border-hairline bg-surface px-3.5 py-2.5 text-base font-medium text-ink transition-colors hover:bg-canvas"
       >
         <StoreIcon width={18} height={18} className="shrink-0 text-brand-600" />
-        <span className="truncate">{store.name}</span>
+        <span className="truncate">{storeName}</span>
         <ChevronDownIcon width={16} height={16} className="shrink-0 text-ink-faint" />
       </button>
 
@@ -49,12 +54,38 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {summary.error && (
+        <div className="mb-4">
+          <ErrorState message={summary.error} onRetry={summary.reload} />
+        </div>
+      )}
+
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {dashboardStats.map((s) => (
-          <StatTile key={s.id} label={s.label} value={s.value} delta={s.delta} />
-        ))}
-        <StatTile label={dashboardCounts[0].label} value={dashboardCounts[0].value} icon={UsersIcon} />
-        <StatTile label={dashboardCounts[1].label} value={dashboardCounts[1].value} icon={AlertIcon} tone="bad" />
+        {today ? (
+          <>
+            <StatTile
+              label="Today's Sales"
+              value={inr(today.revenue)}
+              delta={percent(today.trend?.revenue)}
+              trend={direction(today.trend?.revenue)}
+            />
+            <StatTile
+              label="Est. Profit"
+              value={inr(today.profit)}
+              delta={percent(today.trend?.profit)}
+              trend={direction(today.trend?.profit)}
+            />
+            <StatTile label="Customers" value={count(today.customers)} icon={UsersIcon} />
+            <StatTile
+              label="Low Stock Items"
+              value={count(today.lowStockCount)}
+              icon={AlertIcon}
+              tone={today.lowStockCount > 0 ? 'bad' : 'neutral'}
+            />
+          </>
+        ) : (
+          Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-[5.5rem] w-full" />)
+        )}
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">

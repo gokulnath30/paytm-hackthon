@@ -9,6 +9,13 @@ export interface Turn {
   from: 'user' | 'agent'
   text: string
   bullets?: string[]
+  /** Renders the bubble as a problem rather than an answer. */
+  failed?: boolean
+}
+
+export interface AgentTurn {
+  text: string
+  bullets?: string[]
 }
 
 interface AiChatDockProps {
@@ -16,6 +23,11 @@ interface AiChatDockProps {
   tone: 'brand' | 'leaf'
   launcherLabel: string
   openingTurns: Turn[]
+  /**
+   * Sends the message to the assistant and resolves with its reply. Without it
+   * the dock just echoes what was typed, which is how the scripted demo runs.
+   */
+  onSend?: (message: string) => Promise<AgentTurn>
   placeholder?: string
   /** Optional bridge from the conversation into the screen behind it. */
   action?: { label: string; onClick: () => void }
@@ -34,6 +46,7 @@ export function AiChatDock({
   tone,
   launcherLabel,
   openingTurns,
+  onSend,
   placeholder = 'Type or speak your message...',
   action,
   tip,
@@ -43,12 +56,13 @@ export function AiChatDock({
   const [listening, setListening] = useState(false)
   const [draft, setDraft] = useState('')
   const [turns, setTurns] = useState<Turn[]>(openingTurns)
+  const [pending, setPending] = useState(false)
   const endRef = useRef<HTMLDivElement>(null)
 
   // The thread opens on its latest message rather than its oldest
   useEffect(() => {
     if (open) endRef.current?.scrollIntoView({ block: 'end' })
-  }, [open, turns, listening])
+  }, [open, turns, listening, pending])
 
   const accent = tone === 'leaf' ? 'bg-leaf-500' : 'bg-brand-500'
   const accentHover = tone === 'leaf' ? 'hover:bg-leaf-600' : 'hover:bg-brand-600'
@@ -59,10 +73,33 @@ export function AiChatDock({
   const accentPanel = tone === 'leaf' ? 'bg-leaf-50 text-leaf-700' : 'bg-brand-50 text-brand-700'
   const accentBar = tone === 'leaf' ? 'bg-leaf-500' : 'bg-brand-500'
 
-  function send() {
-    if (!draft.trim()) return
-    setTurns((prev) => [...prev, { id: `t${prev.length + 1}`, from: 'user', text: draft.trim() }])
+  async function send() {
+    const message = draft.trim()
+    if (!message || pending) return
+
+    const stamp = Date.now()
+    setTurns((prev) => [...prev, { id: `u${stamp}`, from: 'user', text: message }])
     setDraft('')
+
+    if (!onSend) return
+
+    setPending(true)
+    try {
+      const reply = await onSend(message)
+      setTurns((prev) => [...prev, { id: `a${stamp}`, from: 'agent', text: reply.text, bullets: reply.bullets }])
+    } catch (error) {
+      setTurns((prev) => [
+        ...prev,
+        {
+          id: `e${stamp}`,
+          from: 'agent',
+          failed: true,
+          text: error instanceof Error ? error.message : 'The assistant could not be reached.',
+        },
+      ])
+    } finally {
+      setPending(false)
+    }
   }
 
   if (!open) {
@@ -130,8 +167,12 @@ export function AiChatDock({
             ) : (
               <div key={t.id} className="flex items-start gap-2">
                 <AgentAvatar tone={tone} size="sm" />
-                <div className="max-w-[85%] rounded-2xl rounded-bl-md border border-hairline bg-surface px-3.5 py-2.5">
-                  <p className="whitespace-pre-line text-base text-ink">{t.text}</p>
+                <div
+                  className={`max-w-[85%] rounded-2xl rounded-bl-md border px-3.5 py-2.5 ${
+                    t.failed ? 'border-bad/20 bg-bad-bg' : 'border-hairline bg-surface'
+                  }`}
+                >
+                  <p className={`whitespace-pre-line text-base ${t.failed ? 'text-bad' : 'text-ink'}`}>{t.text}</p>
                   {t.bullets && (
                     <ul className="mt-1.5 space-y-1">
                       {t.bullets.map((b) => (
@@ -146,6 +187,22 @@ export function AiChatDock({
               </div>
             ),
           )}
+          {pending && (
+            <div className="flex items-start gap-2" role="status" aria-live="polite">
+              <AgentAvatar tone={tone} size="sm" />
+              <span className="flex items-center gap-1 rounded-2xl rounded-bl-md border border-hairline bg-surface px-3.5 py-3.5">
+                <span className="sr-only">{agentName} is replying</span>
+                {[0, 1, 2].map((i) => (
+                  <span
+                    key={i}
+                    className="animate-wave h-1.5 w-1.5 rounded-full bg-ink-faint"
+                    style={{ animationDelay: `${i * 0.15}s` }}
+                  />
+                ))}
+              </span>
+            </div>
+          )}
+
           <div ref={endRef} />
 
           {action && (
@@ -201,15 +258,17 @@ export function AiChatDock({
               id="ai-dock-input"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && send()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void send()
+              }}
               placeholder={placeholder}
               aria-label={placeholder}
               className={`h-11 min-w-0 flex-1 rounded-xl border border-hairline bg-canvas px-3.5 text-base text-ink outline-none placeholder:text-ink-faint ${accentBorder}`}
             />
             <button
               type="button"
-              onClick={send}
-              disabled={!draft.trim()}
+              onClick={() => void send()}
+              disabled={!draft.trim() || pending}
               aria-label="Send message"
               className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white transition-opacity disabled:opacity-40 ${accent} ${accentHover}`}
             >

@@ -1,18 +1,19 @@
 import type { ComponentType, ReactNode, SVGProps } from 'react'
-import { RobotIcon, TrendUpIcon } from './icons'
+import { AlertIcon, RefreshIcon, RobotIcon, TrendUpIcon } from './icons'
 
 /**
- * Product thumbnail. Stands in for the photo the API will supply later —
- * swap the emoji for an <img src={product.imageUrl}> at integration time.
+ * Product thumbnail. `image` is optional in the PayBasket schema and usually
+ * null, so the emoji stands in until a photo URL arrives — pass `src` and it
+ * renders the photo instead.
  */
-export function Thumb({ emoji, size = 'md' }: { emoji: string; size?: 'sm' | 'md' | 'lg' }) {
+export function Thumb({ emoji, src, size = 'md' }: { emoji: string; src?: string | null; size?: 'sm' | 'md' | 'lg' }) {
   const box = size === 'lg' ? 'h-20 w-20 text-3xl' : size === 'md' ? 'h-12 w-12 text-xl' : 'h-10 w-10 text-lg'
   return (
     <span
-      className={`flex ${box} shrink-0 items-center justify-center rounded-xl border border-hairline bg-canvas`}
+      className={`flex ${box} shrink-0 items-center justify-center overflow-hidden rounded-xl border border-hairline bg-canvas`}
       aria-hidden="true"
     >
-      {emoji}
+      {src ? <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" /> : emoji}
     </span>
   )
 }
@@ -29,17 +30,19 @@ export function AgentAvatar({ tone, size = 'md' }: { tone: 'brand' | 'leaf'; siz
   )
 }
 
-/** Big figure tile with an optional upward trend chip. */
+/** Big figure tile with an optional trend chip. */
 export function StatTile({
   label,
   value,
   delta,
+  trend = 'up',
   icon: Icon,
   tone = 'neutral',
 }: {
   label: string
   value: string
   delta?: string
+  trend?: 'up' | 'down'
   icon?: ComponentType<SVGProps<SVGSVGElement>>
   tone?: 'neutral' | 'bad'
 }) {
@@ -59,8 +62,12 @@ export function StatTile({
       </div>
       <p className="nums mt-1.5 text-xl font-bold text-ink">{value}</p>
       {delta && (
-        <p className="nums mt-0.5 flex items-center gap-1 text-xs font-medium text-leaf-600">
-          <TrendUpIcon width={13} height={13} />
+        <p
+          className={`nums mt-0.5 flex items-center gap-1 text-xs font-medium ${
+            trend === 'down' ? 'text-bad' : 'text-leaf-600'
+          }`}
+        >
+          <TrendUpIcon width={13} height={13} className={trend === 'down' ? 'scale-y-[-1]' : undefined} />
           {delta}
         </p>
       )}
@@ -121,5 +128,55 @@ export function SectionHeading({ children, action }: { children: ReactNode; acti
       <h2 className="text-base font-semibold text-ink">{children}</h2>
       {action}
     </div>
+  )
+}
+
+/* ---------- async states ----------
+ * Every screen that reads the API shows the same three faces: a placeholder
+ * while it loads, a retryable message when the call fails, and the content. */
+
+/** Grey placeholder block, sized by the caller. */
+export function Skeleton({ className = '' }: { className?: string }) {
+  return <span className={`block animate-pulse rounded-xl bg-hairline/70 ${className}`} aria-hidden="true" />
+}
+
+export function LoadingBlock({ label = 'Loading…', rows = 3 }: { label?: string; rows?: number }) {
+  return (
+    <div role="status" aria-live="polite" className="space-y-2.5">
+      <span className="sr-only">{label}</span>
+      {Array.from({ length: rows }, (_, i) => (
+        <Skeleton key={i} className="h-16 w-full" />
+      ))}
+    </div>
+  )
+}
+
+export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
+  return (
+    <div
+      role="alert"
+      className="flex flex-col items-start gap-3 rounded-xl border border-bad/20 bg-bad-bg px-4 py-4 sm:flex-row sm:items-center"
+    >
+      <AlertIcon width={20} height={20} className="shrink-0 text-bad" />
+      <p className="min-w-0 flex-1 text-base text-bad">{message}</p>
+      {onRetry && (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="flex shrink-0 items-center gap-1.5 rounded-full bg-bad px-3.5 py-1.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+        >
+          <RefreshIcon width={14} height={14} />
+          Retry
+        </button>
+      )}
+    </div>
+  )
+}
+
+export function EmptyState({ children }: { children: ReactNode }) {
+  return (
+    <p className="rounded-xl border border-dashed border-hairline py-10 text-center text-base text-ink-faint">
+      {children}
+    </p>
   )
 }

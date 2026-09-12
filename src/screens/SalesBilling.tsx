@@ -13,15 +13,24 @@ import {
   SearchIcon,
   TrashIcon,
 } from '../components/icons'
-import { catalog, categories, initialCart, salesConversation, salesSession } from '../lib/mockData'
-import type { CartItem, CatalogItem } from '../lib/mockData'
+import { salesConversation } from '../lib/mockData'
+import type { CartItem, CatalogItem, Category } from '../lib/mockData'
+import { createBill, getCatalog, sendChat } from '../lib/api'
+import { ErrorState, LoadingBlock } from '../components/ui'
+import { useResource } from '../lib/useResource'
 
 export default function SalesBilling() {
   const navigate = useNavigate()
-  const [cart, setCart] = useState<CartItem[]>(initialCart)
+  const [cart, setCart] = useState<CartItem[]>([])
   const [categoryId, setCategoryId] = useState('all')
   const [query, setQuery] = useState('')
   const [cartOpen, setCartOpen] = useState(false)
+  const [billing, setBilling] = useState(false)
+  const [billError, setBillError] = useState<string | null>(null)
+
+  const source = useResource(getCatalog, [])
+  const catalog = useMemo(() => source.data?.items ?? [], [source.data])
+  const categories = source.data?.categories ?? []
 
   // A search spans the whole catalog: filtering it by the selected category
   // means typing a product name that sits in another one returns nothing.
@@ -29,7 +38,26 @@ export default function SalesBilling() {
     const q = query.trim().toLowerCase()
     if (q) return catalog.filter((item) => item.name.toLowerCase().includes(q))
     return catalog.filter((item) => categoryId === 'all' || item.categoryId === categoryId)
-  }, [categoryId, query])
+  }, [catalog, categoryId, query])
+
+  /**
+   * Writes the order, then hands off to Payment. Stock is not cut here - that
+   * happens at COMPLETED, once the money has actually landed.
+   */
+  async function generateBill() {
+    if (cart.length === 0 || billing) return
+    setBilling(true)
+    setBillError(null)
+    try {
+      const order = await createBill(cart)
+      navigate(`/payment?order=${encodeURIComponent(order.order_id)}`)
+    } catch (error) {
+      setBillError(error instanceof Error ? error.message : 'Could not create the bill.')
+      setCartOpen(false)
+    } finally {
+      setBilling(false)
+    }
+  }
 
   const qtyOf = (id: string) => cart.find((c) => c.productId === id)?.qty ?? 0
   const total = cart.reduce((sum, i) => sum + i.unitPrice * i.qty, 0)
@@ -67,7 +95,7 @@ export default function SalesBilling() {
         header={
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <h1 className="truncate text-lg font-semibold text-ink">Sales &amp; Billing</h1>
-            <Pill tone="brand">{salesSession.customer}</Pill>
+            <Pill tone="brand">At the counter</Pill>
           </div>
         }
         headerRight={
@@ -95,18 +123,18 @@ export default function SalesBilling() {
             </button>
             <button
               type="button"
-              disabled={cart.length === 0}
-              onClick={() => navigate('/payment')}
+              disabled={cart.length === 0 || billing}
+              onClick={() => void generateBill()}
               className="flex h-12 shrink-0 items-center gap-2 rounded-xl bg-brand-500 px-5 text-base font-semibold text-white transition-opacity active:scale-[0.99] disabled:opacity-40"
             >
               <ReceiptIcon width={18} height={18} />
-              Generate Bill
+              {billing ? 'Creating...' : 'Generate Bill'}
             </button>
           </div>
         }
       >
         <div className="flex h-full overflow-hidden">
-          <CategoryRail selected={categoryId} onSelect={setCategoryId} />
+          <CategoryRail categories={categories} selected={categoryId} onSelect={setCategoryId} />
 
           <section className="flex min-w-0 flex-1 flex-col overflow-hidden">
             <div className="shrink-0 px-4 pt-4 sm:px-5">
@@ -165,6 +193,16 @@ export default function SalesBilling() {
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-5 sm:px-5">
+              {billError && (
+                <div className="mb-3">
+                  <ErrorState message={billError} onRetry={() => void generateBill()} />
+                </div>
+              )}
+
+              {source.error && <ErrorState message={source.error} onRetry={source.reload} />}
+
+              {source.loading && !source.data && <LoadingBlock label="Loading catalogue" rows={4} />}
+
               {/* auto-fill rather than fixed breakpoints: a split or freeform tablet
                   window can be any width, and the tile count should follow it */}
               {visible.length > 0 ? (
@@ -174,9 +212,14 @@ export default function SalesBilling() {
                   ))}
                 </div>
               ) : (
-                <p className="rounded-xl border border-dashed border-hairline py-12 text-center text-base text-ink-faint">
-                  No products match “{query}”.
-                </p>
+                !source.loading &&
+                !source.error && (
+                  <p className="rounded-xl border border-dashed border-hairline py-12 text-center text-base text-ink-faint">
+                    {catalog.length === 0
+                      ? 'The catalogue is empty. Add a product to start selling.'
+                      : `No products match “${query}”.`}
+                  </p>
+                )
               )}
             </div>
           </section>
@@ -188,7 +231,8 @@ export default function SalesBilling() {
             itemCount={itemCount}
             onChangeQty={changeQty}
             onClear={() => setCart([])}
-            onGenerate={() => navigate('/payment')}
+            onGenerate={() => void generateBill()}
+            busy={billing}
             className="hidden w-80 shrink-0 lg:flex"
           />
         </div>
@@ -220,7 +264,8 @@ export default function SalesBilling() {
               itemCount={itemCount}
               onChangeQty={changeQty}
               onClear={() => setCart([])}
-              onGenerate={() => navigate('/payment')}
+              onGenerate={() => void generateBill()}
+              busy={billing}
               className="flex min-h-0 flex-1"
               bare
             />
@@ -233,13 +278,22 @@ export default function SalesBilling() {
         tone="leaf"
         launcherLabel="Ask AI"
         openingTurns={salesConversation}
+        onSend={(message) => sendChat({ message, role: 'customer' })}
       />
     </>
   )
 }
 
 /** Vertical category rail with thumbnails, tablet and up. */
-function CategoryRail({ selected, onSelect }: { selected: string; onSelect: (id: string) => void }) {
+function CategoryRail({
+  categories,
+  selected,
+  onSelect,
+}: {
+  categories: Category[]
+  selected: string
+  onSelect: (id: string) => void
+}) {
   return (
     <nav
       aria-label="Categories"
@@ -290,7 +344,7 @@ function ProductCard({
   onChange: (id: string, delta: number) => void
 }) {
   const inCart = qty > 0
-  const low = item.stockLeft <= 5
+  const low = item.stockLeft <= (item.minStock ?? 5)
 
   return (
     <div
@@ -370,6 +424,7 @@ function CartPanel({
   onChangeQty,
   onClear,
   onGenerate,
+  busy = false,
   className = '',
   bare = false,
 }: {
@@ -379,6 +434,7 @@ function CartPanel({
   onChangeQty: (id: string, delta: number) => void
   onClear: () => void
   onGenerate: () => void
+  busy?: boolean
   className?: string
   bare?: boolean
 }) {
@@ -448,11 +504,11 @@ function CartPanel({
         <button
           type="button"
           onClick={onGenerate}
-          disabled={cart.length === 0}
+          disabled={cart.length === 0 || busy}
           className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-500 text-base font-semibold text-white transition-opacity disabled:opacity-40"
         >
           <CheckIcon width={18} height={18} />
-          Generate Bill
+          {busy ? 'Creating bill...' : 'Generate Bill'}
         </button>
         <button
           type="button"
