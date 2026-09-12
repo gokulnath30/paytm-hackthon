@@ -13,7 +13,7 @@ import {
   SearchIcon,
   TrashIcon,
 } from '../components/icons'
-import { catalog, categories, initialCart, salesSession } from '../lib/mockData'
+import { catalog, categories, initialCart, salesConversation, salesSession } from '../lib/mockData'
 import type { CartItem, CatalogItem } from '../lib/mockData'
 
 export default function SalesBilling() {
@@ -230,10 +230,7 @@ export default function SalesBilling() {
         agentName="Sales & Billing AI"
         tone="leaf"
         launcherLabel="Ask AI"
-        openingTurns={[
-          { id: 't1', from: 'user', text: salesSession.customerLine },
-          { id: 't2', from: 'agent', text: salesSession.agentLine },
-        ]}
+        openingTurns={salesConversation}
       />
     </>
   )

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AgentAvatar } from './ui'
 import { CheckIcon, CloseIcon, MicIcon, RobotIcon, SendIcon } from './icons'
 
@@ -8,6 +8,7 @@ export interface Turn {
   id: string
   from: 'user' | 'agent'
   text: string
+  bullets?: string[]
 }
 
 interface AiChatDockProps {
@@ -42,6 +43,12 @@ export function AiChatDock({
   const [listening, setListening] = useState(false)
   const [draft, setDraft] = useState('')
   const [turns, setTurns] = useState<Turn[]>(openingTurns)
+  const endRef = useRef<HTMLDivElement>(null)
+
+  // The thread opens on its latest message rather than its oldest
+  useEffect(() => {
+    if (open) endRef.current?.scrollIntoView({ block: 'end' })
+  }, [open, turns, listening])
 
   const accent = tone === 'leaf' ? 'bg-leaf-500' : 'bg-brand-500'
   const accentHover = tone === 'leaf' ? 'hover:bg-leaf-600' : 'hover:bg-brand-600'
@@ -122,12 +129,23 @@ export function AiChatDock({
             ) : (
               <div key={t.id} className="flex items-start gap-2">
                 <AgentAvatar tone={tone} size="sm" />
-                <p className="max-w-[85%] whitespace-pre-line rounded-2xl rounded-bl-md border border-hairline bg-surface px-3.5 py-2.5 text-base text-ink">
-                  {t.text}
-                </p>
+                <div className="max-w-[85%] rounded-2xl rounded-bl-md border border-hairline bg-surface px-3.5 py-2.5">
+                  <p className="whitespace-pre-line text-base text-ink">{t.text}</p>
+                  {t.bullets && (
+                    <ul className="mt-1.5 space-y-1">
+                      {t.bullets.map((b) => (
+                        <li key={b} className="nums flex items-start gap-2 text-base text-ink-soft">
+                          <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-ink-faint" />
+                          {b}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               </div>
             ),
           )}
+          <div ref={endRef} />
 
           {action && (
             <div className="flex justify-start pl-10">

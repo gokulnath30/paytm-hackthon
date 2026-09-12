@@ -293,6 +293,29 @@ export const salesSession = {
   agentLine: 'Adding 2 × Amul Milk and 1 × Britannia Bread to the cart.',
 }
 
+export interface ConversationTurn {
+  id: string
+  from: 'user' | 'agent'
+  text: string
+  bullets?: string[]
+}
+
+/** The counter conversation shown in the Sales & Billing AI dock. */
+export const salesConversation: ConversationTurn[] = [
+  { id: 'c1', from: 'user', text: salesSession.customerLine },
+  { id: 'c2', from: 'agent', text: salesSession.agentLine },
+  { id: 'c3', from: 'user', text: 'I need 2 Maggi and 1 Parle-G.' },
+  { id: 'c4', from: 'agent', text: 'Sure. I found 2 Maggi and 1 Parle-G. Your total is ₹40.' },
+  { id: 'c5', from: 'user', text: "Okay, I'll pay by UPI." },
+  { id: 'c6', from: 'agent', text: 'Payment of ₹40 received. ✅' },
+  {
+    id: 'c7',
+    from: 'agent',
+    text: 'Sale completed. Stock updated.',
+    bullets: ['Maggi: 18 remaining', 'Parle-G: 9 remaining'],
+  },
+]
+
 export const initialCart: CartItem[] = [
   { productId: 'amul-milk', name: 'Amul Taaza Milk', packSize: '500ml', thumb: '🥛', unitPrice: 30, qty: 2 },
   { productId: 'britannia-bread', name: 'Britannia Bread', packSize: '400g', thumb: '🍞', unitPrice: 40, qty: 1 },
