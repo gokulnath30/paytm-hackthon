@@ -271,6 +271,13 @@ export const storeManagerThread: ChatMessage[] = [
   },
 ]
 
+/** Stand-in for product photography until the API supplies image URLs. */
+export const productThumbs = [
+  '🍜', '🥛', '🍪', '🍞', '🧈', '🥤', '🍶', '🧀', '🥖', '🍟',
+  '🌶️', '🥨', '🍘', '🍫', '🍲', '🧃', '🧂', '🌾', '🫒', '🥫',
+  '🍚', '🫘', '☕', '🧴',
+]
+
 export const addProductVoice = {
   title: 'Add Product',
   subtitle: "Just speak. I'll take care of the rest.",

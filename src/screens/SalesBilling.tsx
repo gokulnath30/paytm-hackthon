@@ -226,7 +226,15 @@ export default function SalesBilling() {
         </>
       )}
 
-      <AiChatDock />
+      <AiChatDock
+        agentName="Sales & Billing AI"
+        tone="leaf"
+        launcherLabel="Ask AI"
+        openingTurns={[
+          { id: 't1', from: 'user', text: salesSession.customerLine },
+          { id: 't2', from: 'agent', text: salesSession.agentLine },
+        ]}
+      />
     </>
   )
 }
