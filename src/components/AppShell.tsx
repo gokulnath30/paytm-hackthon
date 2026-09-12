@@ -51,11 +51,14 @@ export function AppShell({
   const widthClass = WIDTH_CLASS[width]
 
   return (
-    <div className="flex min-h-dvh bg-canvas">
+    // Fixed-height app frame: the header, footer and nav stay pinned to the
+    // viewport and only the content pane scrolls. On a landscape tablet a
+    // page-scrolled layout leaves the action bar stranded mid-screen.
+    <div className="flex h-dvh overflow-hidden bg-canvas">
       {showNav && <NavRail />}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="safe-top sticky top-0 z-20 border-b border-hairline bg-surface/95 backdrop-blur">
+        <header className="safe-top z-20 shrink-0 border-b border-hairline bg-surface">
           <div className={`mx-auto flex w-full items-center gap-2 px-4 py-2.5 sm:px-6 ${widthClass}`}>
             {showBack && (
               <button
@@ -79,12 +82,13 @@ export function AppShell({
           </div>
         </header>
 
-        <main className="flex-1">
+        {/* min-h-0 lets this flex child actually scroll instead of growing the frame */}
+        <main className="min-h-0 flex-1 overflow-y-auto">
           <div className={`mx-auto w-full ${widthClass} ${padded ? 'px-4 py-5 sm:px-6 sm:py-6' : ''}`}>{children}</div>
         </main>
 
         {footer && (
-          <div className="sticky bottom-0 z-10 border-t border-hairline bg-surface/95 backdrop-blur">
+          <div className="z-10 shrink-0 border-t border-hairline bg-surface">
             <div className={`mx-auto w-full px-4 py-3 sm:px-6 ${widthClass}`}>{footer}</div>
           </div>
         )}

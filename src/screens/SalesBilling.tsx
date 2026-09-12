@@ -66,7 +66,7 @@ export default function SalesBilling() {
         </div>
       }
     >
-      <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)] lg:items-start">
         <div>
           <div className="mb-3 flex items-center gap-2">
             <h2 className="text-base font-semibold text-ink">{salesSession.customer}</h2>
@@ -119,7 +119,8 @@ export default function SalesBilling() {
                   <Thumb emoji={item.thumb} size="sm" />
 
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-base font-medium text-ink">{item.name}</p>
+                    {/* Wraps rather than truncates — a clipped product name is unusable at the counter */}
+                    <p className="text-base font-medium leading-snug text-ink">{item.name}</p>
                     <p className="text-sm text-ink-soft">{item.packSize}</p>
                   </div>
 

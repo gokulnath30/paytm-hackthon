@@ -16,14 +16,12 @@ export default function Splash() {
       type="button"
       onClick={() => navigate('/login', { replace: true })}
       aria-label="Continue to sign in"
-      className="flex min-h-dvh w-full flex-col items-center justify-between bg-gradient-to-b from-[#fdfcf7] via-canvas to-brand-50 px-6 py-14 text-center"
+      className="flex h-dvh w-full flex-col items-center justify-center gap-8 overflow-hidden bg-gradient-to-b from-[#fdfcf7] via-canvas to-brand-50 px-6 py-8 text-center landscape:flex-row landscape:justify-around landscape:gap-10 landscape:text-left md:landscape:justify-center md:landscape:gap-16"
     >
-      <div />
-
-      <div className="flex flex-col items-center gap-3">
+      <div className="flex flex-col items-center gap-3 landscape:items-start">
         <Wordmark size="lg" />
         <p className="text-base text-ink-soft">{splash.tagline}</p>
-        <PoweredBy className="mt-2" />
+        <PoweredBy className="mt-2 landscape:justify-start" />
       </div>
 
       <ShopIllustration sign={splash.shopSign} />
@@ -34,8 +32,13 @@ export default function Splash() {
 /** Storefront illustration with the shop's signboard. */
 function ShopIllustration({ sign }: { sign: string }) {
   return (
-    <div className="w-full max-w-sm">
-      <svg viewBox="0 0 320 190" className="h-auto w-full" role="img" aria-label={`Kirana storefront, sign reads ${sign}`}>
+    <div className="w-full max-w-sm landscape:max-w-xs md:landscape:max-w-sm">
+      <svg
+        viewBox="0 0 320 190"
+        className="h-auto max-h-[38dvh] w-full"
+        role="img"
+        aria-label={`Kirana storefront, sign reads ${sign}`}
+      >
         <ellipse cx="160" cy="176" rx="140" ry="10" fill="#dbe7fe" />
 
         {/* trees */}

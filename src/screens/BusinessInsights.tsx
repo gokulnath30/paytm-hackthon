@@ -77,7 +77,7 @@ export default function BusinessInsights() {
             <div key={p.rank} className="flex items-center gap-3 border-b border-hairline py-3 last:border-0">
               <span className="nums w-4 shrink-0 text-sm font-semibold text-ink-faint">{p.rank}</span>
               <Thumb emoji={p.thumb} size="sm" />
-              <p className="min-w-0 flex-1 truncate text-base font-medium text-ink">{p.name}</p>
+              <p className="min-w-0 flex-1 text-base font-medium leading-snug text-ink">{p.name}</p>
               <p className="nums shrink-0 text-sm text-ink-soft">{p.units} units</p>
             </div>
           ))}
