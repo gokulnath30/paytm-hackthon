@@ -112,7 +112,7 @@ export default function AddProduct() {
           </div>
         }
       >
-        <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
+        <div className="grid gap-5 md:grid-cols-2 md:items-start">
           <section className="space-y-4">
             <Field label="Product name" required>
               <input

@@ -1,8 +1,16 @@
 import { CartIcon } from './icons'
 
-/** PayBasket wordmark. `size` controls the lockup; the cart mark is optional. */
-export function Wordmark({ size = 'md', mark = true }: { size?: 'sm' | 'md' | 'lg'; mark?: boolean }) {
-  const text = size === 'lg' ? 'text-4xl' : size === 'md' ? 'text-xl' : 'text-lg'
+/** PayBasket wordmark. `size` controls the lockup; mark and text are each optional. */
+export function Wordmark({
+  size = 'md',
+  mark = true,
+  text = true,
+}: {
+  size?: 'sm' | 'md' | 'lg'
+  mark?: boolean
+  text?: boolean
+}) {
+  const textSize = size === 'lg' ? 'text-4xl' : size === 'md' ? 'text-xl' : 'text-lg'
   const box = size === 'lg' ? 'h-14 w-14' : size === 'md' ? 'h-9 w-9' : 'h-8 w-8'
   const icon = size === 'lg' ? 30 : size === 'md' ? 20 : 18
 
@@ -13,9 +21,11 @@ export function Wordmark({ size = 'md', mark = true }: { size?: 'sm' | 'md' | 'l
           <CartIcon width={icon} height={icon} />
         </span>
       )}
-      <span className={`${text} font-bold tracking-tight text-brand-900`}>
-        Pay<span className="text-brand-500">Basket</span>
-      </span>
+      {text && (
+        <span className={`${textSize} font-bold tracking-tight text-brand-900`}>
+          Pay<span className="text-brand-500">Basket</span>
+        </span>
+      )}
     </span>
   )
 }

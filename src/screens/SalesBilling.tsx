@@ -165,8 +165,10 @@ export default function SalesBilling() {
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-5 sm:px-5">
+              {/* auto-fill rather than fixed breakpoints: a split or freeform tablet
+                  window can be any width, and the tile count should follow it */}
               {visible.length > 0 ? (
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] gap-3">
                   {visible.map((item) => (
                     <ProductCard key={item.id} item={item} qty={qtyOf(item.id)} onAdd={() => addItem(item)} onChange={changeQty} />
                   ))}

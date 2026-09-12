@@ -75,7 +75,7 @@ export default function Inventory() {
         </div>
       </div>
 
-      <div className="grid gap-2.5 lg:grid-cols-2">
+      <div className="grid gap-2.5 md:grid-cols-2">
         {visible.map((p) => (
           <div
             key={p.id}
@@ -88,7 +88,7 @@ export default function Inventory() {
             >
               <Thumb emoji={p.thumb} />
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-base font-medium text-ink">{p.name}</span>
+                <span className="block text-base font-medium leading-snug text-ink">{p.name}</span>
                 <span className="block text-sm text-ink-soft">{p.packSize}</span>
               </span>
               <span className="shrink-0 text-right">

@@ -39,7 +39,7 @@ export default function ProductDetails() {
         </div>
       }
     >
-      <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
+      <div className="grid gap-5 md:grid-cols-2 md:items-start">
         <div>
           <div className="flex items-start gap-3.5">
             <Thumb emoji={product.thumb} size="lg" />
@@ -68,7 +68,7 @@ export default function ProductDetails() {
                   >
                     <Icon width={15} height={15} />
                   </span>
-                  <p className="min-w-0 truncate text-xs text-ink-soft">{label}</p>
+                  <p className="min-w-0 text-xs leading-tight text-ink-soft">{label}</p>
                 </div>
                 <p className="nums mt-1.5 text-lg font-bold text-ink">{value}</p>
               </div>

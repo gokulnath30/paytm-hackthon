@@ -71,9 +71,10 @@ export function AiChatDock({
         type="button"
         onClick={() => setOpen(true)}
         aria-label={`Open ${agentName}`}
-        /* clears the phone action bar (72px) + tab bar (52px); screens that keep
-           an action bar at every width push it up on large screens too */
-        className={`fixed bottom-[8.5rem] right-4 z-30 flex items-center gap-2.5 rounded-full py-3 pl-3 pr-4 text-white shadow-lg transition-transform active:scale-95 lg:right-6 ${
+        /* Below 640 it clears the action bar (72px) + tab bar (52px); from 640 the
+           rail replaces the tab bar so only the action bar remains; at 1024 the
+           Sales action bar goes away entirely while Add Product keeps its own. */
+        className={`fixed bottom-[8.5rem] right-4 z-30 flex items-center gap-2.5 rounded-full py-3 pl-3 pr-4 text-white shadow-lg transition-transform active:scale-95 sm:bottom-24 lg:right-6 ${
           aboveFooter ? 'lg:bottom-24' : 'lg:bottom-6'
         } ${accent} ${accentShadow}`}
       >

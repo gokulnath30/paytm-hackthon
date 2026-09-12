@@ -56,7 +56,7 @@ export function AppShell({
     // Fixed-height app frame: the header, footer and nav stay pinned to the
     // viewport and only the content pane scrolls. On a landscape tablet a
     // page-scrolled layout leaves the action bar stranded mid-screen.
-    <div className="flex h-dvh overflow-hidden bg-canvas">
+    <div className="app-frame flex overflow-hidden bg-canvas">
       {showNav && <NavRail />}
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -107,41 +107,51 @@ export function AppShell({
   )
 }
 
-/** Persistent left rail from tablet width up — replaces the bottom tab bar. */
+/**
+ * Left rail from 640px up. Between 640 and 1024 it is icon-only, so a tablet in
+ * a split or freeform window keeps the tablet layout instead of dropping to the
+ * phone one — that window is commonly ~600-820px wide.
+ */
 function NavRail() {
   return (
     <nav
       aria-label="Main"
-      className="safe-top hidden shrink-0 flex-col gap-1 border-r border-hairline bg-surface px-3 py-4 md:flex md:w-56"
+      className="safe-top hidden shrink-0 flex-col gap-1 border-r border-hairline bg-surface py-4 sm:flex sm:w-[4.5rem] sm:items-center sm:px-2 lg:w-56 lg:items-stretch lg:px-3"
     >
-      <div className="mb-5 px-2">
-        <Wordmark size="sm" />
+      <div className="mb-5 flex justify-center lg:justify-start lg:px-2">
+        <span className="lg:hidden">
+          <Wordmark size="sm" mark text={false} />
+        </span>
+        <span className="hidden lg:inline">
+          <Wordmark size="sm" />
+        </span>
       </div>
 
       {NAV_ITEMS.map(({ to, label, Icon }) => (
         <NavLink
           key={to}
           to={to}
+          title={label}
           className={({ isActive }) =>
-            `flex items-center gap-3 rounded-xl px-3 py-2.5 text-base font-medium transition-colors ${
+            `flex items-center rounded-xl text-base font-medium transition-colors sm:h-12 sm:w-12 sm:justify-center lg:h-auto lg:w-auto lg:justify-start lg:gap-3 lg:px-3 lg:py-2.5 ${
               isActive ? 'bg-brand-50 text-brand-600' : 'text-ink-soft hover:bg-canvas'
             }`
           }
         >
-          <Icon width={20} height={20} />
-          {label}
+          <Icon width={21} height={21} />
+          <span className="hidden lg:inline">{label}</span>
         </NavLink>
       ))}
     </nav>
   )
 }
 
-/** Tab bar on phones only. */
+/** Tab bar below 640px, where a rail would crowd the content. */
 function BottomTabs() {
   return (
     <nav
       aria-label="Main"
-      className="safe-bottom sticky bottom-0 z-20 flex border-t border-hairline bg-surface/95 backdrop-blur md:hidden"
+      className="safe-bottom sticky bottom-0 z-20 flex border-t border-hairline bg-surface/95 backdrop-blur sm:hidden"
     >
       {NAV_ITEMS.map(({ to, label, Icon }) => (
         <NavLink
